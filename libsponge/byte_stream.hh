@@ -10,7 +10,6 @@
 //! and then no more bytes can be written.
 class ByteStream {
   private:
-
     // Hint: This doesn't need to be a sophisticated data structure at
     // all, but if any of your tests are taking longer than a second,
     // that's a sign that you probably want to keep exploring

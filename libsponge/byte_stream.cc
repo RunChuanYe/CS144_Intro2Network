@@ -1,4 +1,5 @@
 #include "byte_stream.hh"
+
 #include <iostream>
 // Dummy implementation of a flow-controlled in-memory byte stream.
 
@@ -8,11 +9,12 @@
 // You will need to add private members to the class declaration in `byte_stream.hh`
 
 template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+void DUMMY_CODE(Targs &&.../* unused */) {}
 
 using namespace std;
 
-ByteStream::ByteStream(const size_t capacity) : _capacity(capacity), _written(0), _read(0), _buffer(""), _input_end(false) {}
+ByteStream::ByteStream(const size_t capacity)
+    : _capacity(capacity), _written(0), _read(0), _buffer(""), _input_end(false) {}
 
 size_t ByteStream::write(const string &data) {
     size_t size_written = remaining_capacity();
@@ -24,9 +26,7 @@ size_t ByteStream::write(const string &data) {
 }
 
 //! \param[in] len bytes will be copied from the output side of the buffer
-string ByteStream::peek_output(const size_t len) const {
-    return _buffer.substr(0, min(len, _buffer.size()));
-}
+string ByteStream::peek_output(const size_t len) const { return _buffer.substr(0, min(len, _buffer.size())); }
 
 //! \param[in] len bytes will be removed from the output side of the buffer
 void ByteStream::pop_output(const size_t len) {
@@ -44,7 +44,7 @@ std::string ByteStream::read(const size_t len) {
     return res;
 }
 
-void ByteStream::end_input() { _input_end = true;}
+void ByteStream::end_input() { _input_end = true; }
 
 bool ByteStream::input_ended() const { return _input_end; }
 
@@ -55,8 +55,10 @@ bool ByteStream::buffer_empty() const { return _buffer.size() == 0; }
 bool ByteStream::eof() const {
     // not _read == _written
     // init: _read == _written == 0
-    if (input_ended() && buffer_empty()) return true;
-    else return false;
+    if (input_ended() && buffer_empty())
+        return true;
+    else
+        return false;
 }
 
 size_t ByteStream::bytes_written() const { return _written; }
