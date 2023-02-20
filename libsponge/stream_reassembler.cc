@@ -25,7 +25,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
     // 1. remove the duplicate chars in data
     // 2. get empty space for data_no_dup
     // 3. put _sub_strs into the _output
-    
+
     // remove the substr from data that has been written to ByteStream
     // ByteStream index start from 0
     string data_no_dup = data;
