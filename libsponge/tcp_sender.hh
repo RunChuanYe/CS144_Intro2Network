@@ -7,8 +7,8 @@
 #include "wrapping_integers.hh"
 
 #include <functional>
+#include <map>
 #include <queue>
-
 //! \brief The "sender" part of a TCP implementation.
 
 //! Accepts a ByteStream, divides it up into segments and sends the
@@ -31,6 +31,18 @@ class TCPSender {
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+    // stream index map to the seg
+    std::map<uint64_t, TCPSegment> _outstanding_segs;
+
+    uint16_t _win_size = 0;
+    WrappingInt32 _ackno;
+    unsigned int _rx_time_left;
+    bool timer_running = false;
+    size_t _rx_times = 0;
+    TCPSegment _zero_seg;
+    bool _zero_seg_send = false;
+    uint64_t _zero_seg_seq = 0;
 
   public:
     //! Initialize a TCPSender
