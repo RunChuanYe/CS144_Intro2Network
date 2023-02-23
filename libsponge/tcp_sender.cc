@@ -53,7 +53,7 @@ void TCPSender::fill_window() {
             _rx_time_left = _initial_retransmission_timeout;
         }
 
-    } else if (_win_size > bytes_in_flight()) {
+    } else if (_win_size > bytes_in_flight() && !_zero_seg_send) {
         // only fin, and not send already send
         if (stream_in().eof() && next_seqno_absolute() < stream_in().bytes_written() + 2) {
             TCPSegment seg;
@@ -125,6 +125,7 @@ void TCPSender::fill_window() {
                 _rx_time_left = _initial_retransmission_timeout;
             }
         }
+        cerr << "send eof zero test before, " << endl;
         if (stream_in().eof() && !_zero_seg_send) {
             _zero_seg_send = true;
 
@@ -140,6 +141,20 @@ void TCPSender::fill_window() {
                 timer_running = true;
                 _rx_time_left = _initial_retransmission_timeout;
             }
+
+            cerr << "send eof zero test after, " << endl;
+            cerr << "timer_running: " << timer_running << endl;
+            cerr << "time_left: " << _initial_retransmission_timeout << endl;
+            cerr << "rx_time_left: " << _rx_time_left << endl;
+
+            TCPSegment seg = _zero_seg;
+            std::cerr << "(" << (seg.header().ack ? "A=1," : "A=0,") << (seg.header().rst ? "R=1," : "R=0,")
+                      << (seg.header().syn ? "S=1," : "S=0,") << (seg.header().fin ? "F=1," : "F=0,")
+                      << "ackno=" << seg.header().ackno << ","
+                      << "win=" << seg.header().win << ","
+                      << "seqno=" << seg.header().seqno << ","
+                      << "payload_size=" << seg.payload().size() << ","
+                      << "data=" << seg.payload().copy() << std::endl;
         }
     }
 }
@@ -235,5 +250,8 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
 unsigned int TCPSender::consecutive_retransmissions() const { return _rx_times; }
 
 void TCPSender::send_empty_segment() {
-    // TODO
+    // produce an empty seg
+    TCPSegment seg;
+    seg.header().seqno = next_seqno();
+    _segments_out.push(seg);
 }

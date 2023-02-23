@@ -6,6 +6,8 @@
 #include "tcp_sender.hh"
 #include "tcp_state.hh"
 
+#include <iostream>
+
 //! \brief A complete endpoint of a TCP connection
 class TCPConnection {
   private:
@@ -20,6 +22,70 @@ class TCPConnection {
     //! for 10 * _cfg.rt_timeout milliseconds after both streams have ended,
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
+
+    size_t _time_since_last_seg_rec = 0;
+
+    // the segment_out() must not be empty!
+    void send_common_seg() {
+        // fill the win and akcno fields in the seg
+        TCPSegment seg = _sender.segments_out().front();
+        _sender.segments_out().pop();
+
+        if (_receiver.ackno().has_value()) {
+            seg.header().ack = true;
+            seg.header().ackno = _receiver.ackno().value();
+            seg.header().win = _receiver.window_size();
+        }
+
+        // send to IP
+        _segments_out.push(seg);
+
+        std::cerr << "(" << (seg.header().ack ? "A=1," : "A=0,") << (seg.header().rst ? "R=1," : "R=0,")
+                  << (seg.header().syn ? "S=1," : "S=0,") << (seg.header().fin ? "F=1," : "F=0,")
+                  << "ackno=" << seg.header().ackno << ","
+                  << "win=" << seg.header().win << ","
+                  << "seqno=" << seg.header().seqno << ","
+                  << "payload_size=" << seg.payload().size() << ","
+                  << "data=" << seg.payload().copy() << std::endl;
+    }
+
+    void send_all_segs() {
+        // any time the _sender produce a seg, send them all
+        while (!_sender.segments_out().empty()) {
+            send_common_seg();
+        }
+    }
+
+    void send_rst_seg() {
+        // remote
+        if (_sender.segments_out().empty()) {
+            _sender.send_empty_segment();
+        }
+        TCPSegment seg = _sender.segments_out().front();
+        seg.header().rst = true;
+        if (_receiver.ackno().has_value()) {
+            seg.header().ack = true;
+            seg.header().ackno = _receiver.ackno().value();
+            seg.header().win = _receiver.window_size();
+        }
+        segments_out().push(seg);
+    }
+
+    bool time_wait_state() const {
+        // waiting to make sure the ack for the fin is received by remote
+        return _receiver.stream_out().eof() && _sender.stream_in().eof() && _sender.bytes_in_flight() == 0 &&
+               (_sender.stream_in().bytes_written() + 2) == _sender.next_seqno_absolute();
+    }
+    bool closing_state() const {
+        // the same with the time wait state, but the fin is firstly received and then send to remote
+        return time_wait_state();
+    }
+
+    bool connection_establish() {
+        // SYN received ans SYN acked!
+        return _receiver.ackno().has_value() && !_receiver.stream_out().input_ended() &&
+               _sender.next_seqno_absolute() > _sender.bytes_in_flight() && !_sender.stream_in().eof();
+    }
 
   public:
     //! \name "Input" interface for the writer

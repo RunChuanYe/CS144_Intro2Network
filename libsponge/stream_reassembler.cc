@@ -21,6 +21,11 @@ StreamReassembler::StreamReassembler(const size_t capacity)
 //! possibly out-of-order, from the logical stream, and assembles any newly
 //! contiguous substrings and writes them into the output stream in order.
 void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
+    // check the index first!
+    if (index >= (stream_out().bytes_written() + stream_out().remaining_capacity())) {
+        return;
+    }
+
     // three steps in total:
     // 1. remove the duplicate chars in data
     // 2. get empty space for data_no_dup
