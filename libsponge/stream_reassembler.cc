@@ -58,9 +58,14 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
 
     // remove the substr from data that has been stored in the sub_strs
     for (auto it = _substrs.begin(); it != _substrs.end(); ++it) {
-        // all duplicate
-        if (data_no_dup.size() == 0)
+        // all duplicate and not eof
+        if (data_no_dup.size() == 0 && !eof) {
             return;
+        }
+        // avoid the substr pos > size()
+        if (data_no_dup.size() == 0 && eof) {
+            break;
+        }
         // curr_str range: [curr_begin, curr_end]
         size_t curr_begin = it->second.index;
         size_t curr_end = it->second.data.size() + curr_begin - 1;

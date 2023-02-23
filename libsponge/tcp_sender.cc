@@ -25,7 +25,7 @@ TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const s
     , _outstanding_segs()
     , _ackno(0)
     , _rx_time_left(_initial_retransmission_timeout)
-    , _zero_seg() {}
+    , _zero_win_seg() {}
 
 uint64_t TCPSender::bytes_in_flight() const {
     // return the total size of the _outstanding_segs's space
@@ -53,7 +53,7 @@ void TCPSender::fill_window() {
             _rx_time_left = _initial_retransmission_timeout;
         }
 
-    } else if (_win_size > bytes_in_flight() && !_zero_seg_send) {
+    } else if (_win_size > bytes_in_flight() && !_zero_win_seg_send) {
         // only fin, and not send already send
         if (stream_in().eof() && next_seqno_absolute() < stream_in().bytes_written() + 2) {
             TCPSegment seg;
@@ -111,32 +111,32 @@ void TCPSender::fill_window() {
         // send as the _win_size is 1, for the continuous send
 
         // send a byte
-        if (!stream_in().buffer_empty() && !_zero_seg_send) {
-            _zero_seg_send = true;
+        if (!stream_in().buffer_empty() && !_zero_win_seg_send) {
+            _zero_win_seg_send = true;
 
-            _zero_seg.header().seqno = next_seqno();
-            _zero_seg.payload() = stream_in().read(1);
-            _zero_seg_seq = next_seqno_absolute();
+            _zero_win_seg.header().seqno = next_seqno();
+            _zero_win_seg.payload() = stream_in().read(1);
+            _zero_win_seg_seq = next_seqno_absolute();
 
-            _next_seqno += _zero_seg.length_in_sequence_space();
-            _segments_out.push(_zero_seg);
+            _next_seqno += _zero_win_seg.length_in_sequence_space();
+            _segments_out.push(_zero_win_seg);
             if (!timer_running) {
                 timer_running = true;
                 _rx_time_left = _initial_retransmission_timeout;
             }
         }
         cerr << "send eof zero test before, " << endl;
-        if (stream_in().eof() && !_zero_seg_send) {
-            _zero_seg_send = true;
+        if (stream_in().eof() && !_zero_win_seg_send) {
+            _zero_win_seg_send = true;
 
-            _zero_seg.header().seqno = next_seqno();
-            _zero_seg.header().fin = true;
+            _zero_win_seg.header().seqno = next_seqno();
+            _zero_win_seg.header().fin = true;
             // set empty payload
-            _zero_seg.payload() = Buffer("");
-            _zero_seg_seq = next_seqno_absolute();
+            _zero_win_seg.payload() = Buffer("");
+            _zero_win_seg_seq = next_seqno_absolute();
 
-            _next_seqno += _zero_seg.length_in_sequence_space();
-            _segments_out.push(_zero_seg);
+            _next_seqno += _zero_win_seg.length_in_sequence_space();
+            _segments_out.push(_zero_win_seg);
             if (!timer_running) {
                 timer_running = true;
                 _rx_time_left = _initial_retransmission_timeout;
@@ -147,7 +147,7 @@ void TCPSender::fill_window() {
             cerr << "time_left: " << _initial_retransmission_timeout << endl;
             cerr << "rx_time_left: " << _rx_time_left << endl;
 
-            TCPSegment seg = _zero_seg;
+            TCPSegment seg = _zero_win_seg;
             std::cerr << "(" << (seg.header().ack ? "A=1," : "A=0,") << (seg.header().rst ? "R=1," : "R=0,")
                       << (seg.header().syn ? "S=1," : "S=0,") << (seg.header().fin ? "F=1," : "F=0,")
                       << "ackno=" << seg.header().ackno << ","
@@ -175,8 +175,8 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
             ack_absoluate_seqno -= (1ul << 32);
     }
 
-    if (ack_absoluate_seqno > _zero_seg_seq) {
-        _zero_seg_send = false;
+    if (ack_absoluate_seqno > _zero_win_seg_seq) {
+        _zero_win_seg_send = false;
     }
 
     for (auto it = _outstanding_segs.begin(); it != _outstanding_segs.end();) {
@@ -190,7 +190,7 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
             it++;
     }
 
-    if (_outstanding_segs.empty() && !_zero_seg_send)
+    if (_outstanding_segs.empty() && !_zero_win_seg_send)
         timer_running = false;
 
     // check whether is the newest ack, to reset the time_out
@@ -210,12 +210,12 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
 void TCPSender::tick(const size_t ms_since_last_tick) {
     // check whether the _rx_time_left is expire or not
 
-    if (_zero_seg_send) {
-        // only for the _zero_seg
+    if (_zero_win_seg_send) {
+        // only for the _zero_win_seg
         _rx_time_left = _rx_time_left > ms_since_last_tick ? _rx_time_left - ms_since_last_tick : 0;
         if (!_rx_time_left) {
             // re send
-            segments_out().push(_zero_seg);
+            segments_out().push(_zero_win_seg);
             // reset time!
             timer_running = true;
             _rx_time_left = _initial_retransmission_timeout;

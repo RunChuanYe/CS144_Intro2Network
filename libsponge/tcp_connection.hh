@@ -45,8 +45,8 @@ class TCPConnection {
                   << "ackno=" << seg.header().ackno << ","
                   << "win=" << seg.header().win << ","
                   << "seqno=" << seg.header().seqno << ","
-                  << "payload_size=" << seg.payload().size() << ","
-                  << "data=" << seg.payload().copy() << std::endl;
+                  << "payload_size=" << seg.payload().size() << "," << std::endl;
+        //                  << "data=" << seg.payload().copy() << std::endl;
     }
 
     void send_all_segs() {
@@ -74,7 +74,8 @@ class TCPConnection {
     bool time_wait_state() const {
         // waiting to make sure the ack for the fin is received by remote
         return _receiver.stream_out().eof() && _sender.stream_in().eof() && _sender.bytes_in_flight() == 0 &&
-               (_sender.stream_in().bytes_written() + 2) == _sender.next_seqno_absolute();
+               (_sender.stream_in().bytes_written() + 2) == _sender.next_seqno_absolute() &&
+               !_sender.get_zero_seg_send();
     }
     bool closing_state() const {
         // the same with the time wait state, but the fin is firstly received and then send to remote
@@ -83,8 +84,7 @@ class TCPConnection {
 
     bool connection_establish() {
         // SYN received ans SYN acked!
-        return _receiver.ackno().has_value() && !_receiver.stream_out().input_ended() &&
-               _sender.next_seqno_absolute() > _sender.bytes_in_flight() && !_sender.stream_in().eof();
+        return _receiver.ackno().has_value() && _sender.next_seqno_absolute() > _sender.bytes_in_flight();
     }
 
   public:

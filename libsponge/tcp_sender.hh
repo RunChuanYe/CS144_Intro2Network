@@ -40,11 +40,14 @@ class TCPSender {
     unsigned int _rx_time_left;
     bool timer_running = false;
     size_t _rx_times = 0;
-    TCPSegment _zero_seg;
-    bool _zero_seg_send = false;
-    uint64_t _zero_seg_seq = 0;
+    TCPSegment _zero_win_seg;
+    bool _zero_win_seg_send = false;
+    uint64_t _zero_win_seg_seq = 0;
 
   public:
+    // get zero win reg
+    bool get_zero_seg_send() const { return _zero_win_seg_send; }
+
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,
               const uint16_t retx_timeout = TCPConfig::TIMEOUT_DFLT,

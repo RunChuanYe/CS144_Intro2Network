@@ -105,8 +105,10 @@ size_t TCPConnection::write(const string &data) {
     // write data for sender to get
     size_t write_size = _sender.stream_in().write(data);
     // generate segs and send them all
-    _sender.fill_window();
-    send_all_segs();
+    if (connection_establish()) {
+        _sender.fill_window();
+        send_all_segs();
+    }
 
     return write_size;
 }
