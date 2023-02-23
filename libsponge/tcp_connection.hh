@@ -39,13 +39,13 @@ class TCPConnection {
 
         // send to IP
         _segments_out.push(seg);
-
-        std::cerr << "(" << (seg.header().ack ? "A=1," : "A=0,") << (seg.header().rst ? "R=1," : "R=0,")
-                  << (seg.header().syn ? "S=1," : "S=0,") << (seg.header().fin ? "F=1," : "F=0,")
-                  << "ackno=" << seg.header().ackno << ","
-                  << "win=" << seg.header().win << ","
-                  << "seqno=" << seg.header().seqno << ","
-                  << "payload_size=" << seg.payload().size() << "," << std::endl;
+        //
+        //        std::cerr << "(" << (seg.header().ack ? "A=1," : "A=0,") << (seg.header().rst ? "R=1," : "R=0,")
+        //                  << (seg.header().syn ? "S=1," : "S=0,") << (seg.header().fin ? "F=1," : "F=0,")
+        //                  << "ackno=" << seg.header().ackno << ","
+        //                  << "win=" << seg.header().win << ","
+        //                  << "seqno=" << seg.header().seqno << ","
+        //                  << "payload_size=" << seg.payload().size() << "," << std::endl;
         //                  << "data=" << seg.payload().copy() << std::endl;
     }
 
