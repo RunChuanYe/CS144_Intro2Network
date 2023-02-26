@@ -4,6 +4,8 @@ For build prereqs, see [the CS144 VM setup instructions](https://web.stanford.ed
 
 To set up your build directory:
 
+
+
 	$ mkdir -p <path/to/sponge>/build
 	$ cd <path/to/sponge>/build
 	$ cmake ..

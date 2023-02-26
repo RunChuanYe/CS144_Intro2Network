@@ -43,11 +43,28 @@ class AsyncNetworkInterface : public NetworkInterface {
 class Router {
     //! The router's collection of network interfaces
     std::vector<AsyncNetworkInterface> _interfaces{};
+    struct RoutingTableEntry {
+        // default init
+        uint32_t _route_prefix = 0;
+        uint8_t _prefix_length = 0;
+        std::optional<Address> _next_hop = {};
+        size_t _interface_num = 0;
+        RoutingTableEntry(const uint32_t route_prefix,
+                          const uint8_t prefix_length,
+                          const std::optional<Address> next_hop,
+                          const size_t interface_num);
+        RoutingTableEntry() {}
+    };
+
+    std::vector<RoutingTableEntry> _routing_table{};
 
     //! Send a single datagram from the appropriate outbound interface to the next hop,
-    //! as specified by the route with the longest prefix_length that matches the
+    //! as specified by the route with the longest _prefix_length that matches the
     //! datagram's destination address.
     void route_one_datagram(InternetDatagram &dgram);
+
+    // match helper func
+    bool match(uint32_t dst, uint32_t entry_dst, uint8_t pre_len);
 
   public:
     //! Add an interface to the router
