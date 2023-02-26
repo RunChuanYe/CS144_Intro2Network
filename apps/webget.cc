@@ -13,7 +13,7 @@ void get_URL(const string &host, const string &path) {
 
     Address dest(host, "http");
 
-    CS144TCPSocket socket;
+    FullStackSocket socket;
 
     socket.connect(dest);
 

@@ -5,6 +5,7 @@
 #include "tcp_over_ip.hh"
 #include "tun.hh"
 
+#include <map>
 #include <optional>
 #include <queue>
 
@@ -31,6 +32,10 @@
 //! and learns or replies as necessary.
 class NetworkInterface {
   private:
+    // 5 seconds for the next send!
+    static const uint32_t MAX_REQ_TIME = 5000;
+    // 30 seconds for the cache time
+    static const uint32_t MAX_CACHE_TIME = 30000;
     //! Ethernet (known as hardware, network-access-layer, or link-layer) address of the interface
     EthernetAddress _ethernet_address;
 
@@ -39,6 +44,16 @@ class NetworkInterface {
 
     //! outbound queue of Ethernet frames that the NetworkInterface wants sent
     std::queue<EthernetFrame> _frames_out{};
+
+    std::map<uint32_t, EthernetAddress> _IP_MAC_cache;
+    std::map<uint32_t, uint32_t> _time_since_cache;
+
+    // waiting for the ARP reply
+    std::map<uint32_t, InternetDatagram> _waiting_list;
+    // time since the ARP req send
+    std::map<uint32_t, uint32_t> _time_since_req_send;
+    // ARP req send, waiting reply
+    std::map<uint32_t, EthernetFrame> _reqs;
 
   public:
     //! \brief Construct a network interface with given Ethernet (network-access-layer) and IP (internet-layer) addresses
